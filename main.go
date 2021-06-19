@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"text/template"
 
@@ -13,6 +15,24 @@ var tpl = template.Must(template.ParseFiles("index.html"))
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	tpl.Execute(w, nil)
+}
+
+func searchHandler(w http.ResponseWriter, r *http.Request) {
+	u, err := url.Parse(r.URL.String())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	params := u.Query()
+	searchQuery := params.Get("q")
+	page := params.Get("page")
+	if page == "" {
+		page = "1"
+	}
+
+	fmt.Println("Serch Query is: ", searchQuery)
+	fmt.Println("Page is:", page)
 }
 
 func main() {
@@ -30,6 +50,8 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fs))
+
+	mux.HandleFunc("/serch", searchHandler)
 	mux.HandleFunc("/", indexHandler)
 	http.ListenAndServe(":"+port, mux)
 }
